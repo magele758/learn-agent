@@ -1,0 +1,74 @@
+{
+  "topic": "local-demo",
+  "propositions": [
+    {
+      "id": "prior",
+      "text": "A definition used by the next claim",
+      "status": "stable",
+      "evidence": [
+        "learner restated the definition",
+        "practice passed: restate the definition without looking",
+        "learner restated the definition",
+        "practice passed: restate the definition without looking",
+        "learner restated the definition",
+        "practice passed: restate the definition without looking"
+      ]
+    },
+    {
+      "id": "claim",
+      "text": "The claim that depends on the definition",
+      "status": "unknown",
+      "evidence": []
+    }
+  ],
+  "dependencies": [
+    {
+      "id": "dep-1",
+      "prerequisiteId": "prior",
+      "targetId": "claim"
+    }
+  ],
+  "reasoning": [
+    {
+      "id": "reason-1",
+      "propositionId": "prior",
+      "because": "the definition has to be stable before the claim",
+      "source": "teach"
+    },
+    {
+      "id": "reason-2",
+      "propositionId": "prior",
+      "because": "the definition has to be stable before the claim",
+      "source": "teach"
+    },
+    {
+      "id": "reason-3",
+      "propositionId": "prior",
+      "because": "the definition has to be stable before the claim",
+      "source": "teach"
+    }
+  ],
+  "practice": [
+    {
+      "id": "practice-1",
+      "propositionId": "prior",
+      "prompt": "restate the definition without looking",
+      "answer": "definition",
+      "passed": true
+    },
+    {
+      "id": "practice-2",
+      "propositionId": "prior",
+      "prompt": "restate the definition without looking",
+      "answer": "definition",
+      "passed": true
+    },
+    {
+      "id": "practice-3",
+      "propositionId": "prior",
+      "prompt": "restate the definition without looking",
+      "answer": "definition",
+      "passed": true
+    }
+  ]
+}
