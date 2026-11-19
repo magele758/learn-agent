@@ -1,2 +1,14 @@
 node_modules/
 data/reading/
+
+# 密钥与凭据。规则目录必须入库，不要忽略 .cursor/ 或 .agents/
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+credentials.json
+secrets.env
+secrets.json
+**/sessions/**/*.jsonl
+agent-transcripts/

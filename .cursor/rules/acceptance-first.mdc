@@ -1,0 +1,13 @@
+---
+description: 验收先行：需求 → acceptance YAML → 带标签测试 → 门禁
+alwaysApply: true
+---
+
+# 验收先行
+
+1. 行为变更：先在 `acceptance/<id>.yaml` 写 given/when/then（status: draft），用户确认后为 approved。
+   用户已明确授权“验收写完直接做”时，在 notes 写 `assumedApproval: <来源>` 并继续。
+2. 测试标题带 `[AC:<id>#AC-n]`；实现完成后把 `verified:` 填为测试文件路径，status 改 implemented。
+3. 写完验收当轮实现，不停下等批准。
+4. 完成前运行 `scripts/gate.sh merge`，把命令和结果写进 PR 描述或任务卡。
+5. 纯 fix / docs / chore / 无行为变化的 refactor 可不建 acceptance，但需有回归测试或说明为何无法测试。

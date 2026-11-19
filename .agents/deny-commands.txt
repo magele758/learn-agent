@@ -1,0 +1,11 @@
+# 范式继承文件（paradigm upgrade 会更新）。项目自己的禁令写到 .agents/deny-commands.project.txt。
+# 每行一个 ERE，匹配 agent 将执行的 shell 命令；守卫 hook 与 rule-doctor 共用。新增条目在 docs/retro/ 或 ADR 留理由。
+git push .*(--force|-f( |$))
+--no-verify
+# git commit -n 等同 --no-verify；git push -n 是 dry-run，不拦
+git (-C [^ ]+ )?commit( [^;&|]*)? -[A-Za-z]*n[A-Za-z]*( |$)
+git reset --hard
+git stash( |$)
+git clean -[a-z]*f
+rm -rf /( |$)
+rm -rf ~

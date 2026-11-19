@@ -1,0 +1,42 @@
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - run: scripts/gate.sh merge
+      - name: 构建产物到 dist/
+        run: |
+          mkdir -p dist
+          # 按产物类型替换，例如：
+          #   npm pack --pack-destination dist
+          #   cargo build --release && cp target/release/<bin> dist/
+          #   (cd extension && zip -r ../dist/<name>-$(cat ../VERSION).zip .)
+      - name: 校验 tag 与 VERSION 一致
+        run: test "${GITHUB_REF_NAME#v}" = "$(cat VERSION)"
+      - name: 提取本版本 changelog
+        run: |
+          awk -v v="${GITHUB_REF_NAME#v}" '
+            $0 ~ "^## \\[" v "\\]" {on=1; next}
+            on && /^## \[/ {exit}
+            on {print}' CHANGELOG.md > notes.md
+      - name: 创建 GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          shopt -s nullglob
+          files=(dist/*)
+          if [ ${#files[@]} -gt 0 ]; then (cd dist && sha256sum -- * > SHA256SUMS); files=(dist/*); fi
+          gh release create "$GITHUB_REF_NAME" "${files[@]}" --notes-file notes.md --verify-tag
+      # 镜像 / 桌面端等多轨发布：复制本 job，按 tag 前缀（image-v* / desktop-v*）分别触发。

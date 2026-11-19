@@ -1,0 +1,5 @@
+# 项目禁令（自有层，paradigm 不会覆盖）。每行一个 ERE，守卫 hook 与 rule-doctor 共用。
+# 把主实例（共享运行实例）的停止 / 重建 / 重启命令登记在这里，例如：
+# scripts/stop-main\.sh
+# REBUILD=1 .*start
+# docker compose .*down

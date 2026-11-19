@@ -1,0 +1,32 @@
+# 复制为 acceptance/<id>.yaml。id 全局唯一，测试标题中以 [AC:<id>#AC-n] 引用。
+# status: draft（不阻塞门禁）| approved（必须有测试或 eval）| implemented（必须有通过的测试 / eval + verified）| retired
+# AI 行为（回答质量、意图识别、工具选择）用 eval 验收：verify: eval，并写 eval: {dataset: …, min_pass_rate: …}，
+# 这条 AC 由 eval 覆盖，不需要 [AC:] 测试标签；数据集与结果约定见 evals/README.md。
+id: example-feature
+title: 一句话描述用户可观察的能力
+status: draft
+source: docs/specs/YYYY-MM-DD-example.md
+requirement: |
+  用户在什么场景下，能做到什么；只写可观察行为，不写实现。
+non_goals:
+  - 明确不做的事
+notes: ""
+criteria:
+  - id: AC-1
+    given: 前置条件
+    when: 用户/系统动作
+    then: 可观察的结果
+    verify: auto        # auto | live-e2e | manual | eval
+    verified: ""        # implemented 后填测试文件路径（eval 填数据集路径）
+  - id: AC-2
+    given: 异常/边界条件
+    when: 动作
+    then: 明确的失败表现（报错信息、不产生副作用）
+    verify: auto
+    verified: ""
+  # - id: AC-3
+  #   given: 用户用自然语言描述退款诉求
+  #   when: 意图识别
+  #   then: 识别为 refund
+  #   verify: eval
+  #   eval: {dataset: evals/datasets/intent.jsonl, min_pass_rate: 0.9}

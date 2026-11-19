@@ -1,0 +1,145 @@
+# 规则 → 执行点对照表（机器可读真源，范式继承文件）。项目自己的红线登记在 .agents/enforcement.project.yaml（同格式）。
+# AGENTS.md「红线」节的每条 bullet 用 <!-- R:<id> --> 引用这里的 id；scripts/rule-doctor.sh 校验两边一致、执行点存在。
+# enforce：hook（agent / git hook 硬拦）| gate（scripts/gate.sh 中的检查）| lint | ci | advisory（建议，没有机器执行点）
+# check：执行点文件，空格分隔；profile：从哪一档开始具备执行点。文档版：scripts/rule-doctor.sh --render
+rules:
+  - id: no-weaken-assertions
+    rule: 不修改用户确认的契约断言，不用 skip / only / mock / 删断言让测试变绿
+    enforce: advisory
+    note: 评审检查；改已批准 AC 必须带 Contract-Change trailer
+    profile: spike
+  - id: ac-has-tests
+    rule: approved / implemented 的每条 AC 都有带标签的测试，或引用存在且格式正确的 eval 数据集
+    enforce: gate
+    check: scripts/check-acceptance.sh scripts/rule-doctor.sh
+    profile: product
+  - id: eval-no-regression
+    rule: 配置了 eval runner 时，通过率相对基线的回退不超过阈值，成本 / 延迟 p95 不超出阈值，验收里的 min_pass_rate 达标
+    enforce: gate
+    check: scripts/gate.sh scripts/eval-compare.sh scripts/lib/eval.pl
+    profile: product
+  - id: prompt-change-eval
+    rule: 改 prompt 文件必须带版本标记并 bump，且通过 eval 基线对比（没配 runner 即失败）
+    enforce: gate
+    check: scripts/gate.sh scripts/check-prompts.sh scripts/eval-compare.sh
+    profile: product
+  - id: eval-baseline-explicit
+    rule: eval 基线只用 --update-baseline 显式更新并写明原因，不为过门禁改基线、用例或阈值
+    enforce: advisory
+    note: 评审检查 evals/baseline.json、数据集与 paradigm.conf 阈值的改动（.cursor/rules/prompt-eval.mdc）
+    profile: product
+  - id: no-force-push
+    rule: 不 force push
+    enforce: hook
+    check: .agents/hooks/guard-shell.sh .agents/deny-commands.txt .claude/settings.json
+    profile: spike
+  - id: no-verify-bypass
+    rule: 不用 --no-verify / git commit -n 跳过 git hooks
+    enforce: hook
+    check: .agents/hooks/guard-shell.sh .agents/deny-commands.txt
+    profile: spike
+  - id: no-destructive-git
+    rule: 不 reset --hard / stash / clean -f 他人改动
+    enforce: hook
+    check: .agents/hooks/guard-shell.sh .agents/deny-commands.txt
+    profile: spike
+  - id: no-touch-main-stack
+    rule: 不对共享运行实例做 stop / rebuild / kill
+    enforce: hook
+    check: .agents/hooks/guard-shell.sh .agents/deny-commands.project.txt .agents/protected-ports
+    profile: spike
+  - id: no-kill-protected-ports
+    rule: 不结束受保护端口上的进程（kill / pkill / killall / lsof 配合 kill / fuser -k / kill-port，含按 pid 结束）
+    enforce: hook
+    check: .agents/hooks/guard-shell.sh scripts/lib/ports.pl .agents/protected-ports
+    profile: spike
+  - id: isolated-dev-ports
+    rule: agent 启动的服务只用 dev-ports 分配的端口段
+    enforce: advisory
+    note: scripts/dev-ports.sh 按分支确定性分配并避开受保护端口；守卫只拦结束进程，不拦占用
+    profile: spike
+  - id: no-secrets
+    rule: 不提交密钥、.env*、凭据文件
+    enforce: hook
+    check: scripts/git/pre-commit scripts/git/pre-push scripts/check-hygiene.sh
+    profile: spike
+  - id: no-session-logs
+    rule: 不提交 agent 会话日志与转录
+    enforce: hook
+    check: scripts/git/pre-commit scripts/check-hygiene.sh
+    profile: spike
+  - id: no-large-binaries
+    rule: 不提交超过大小上限的文件
+    enforce: hook
+    check: scripts/git/pre-commit scripts/check-hygiene.sh
+    profile: spike
+  - id: no-private-info
+    rule: 提交信息与代码里不出现私有主机名、私网 IP、个人绝对路径
+    enforce: hook
+    check: scripts/git/commit-msg scripts/git/pre-push scripts/check-hygiene.sh scripts/lib/secscan.pl
+    profile: spike
+  - id: prepush-scan
+    rule: 推送前扫描全部待推送提交的信息与 diff，agent 推送的分支同样经过
+    enforce: hook
+    check: scripts/git/pre-push scripts/scan-range.sh
+    profile: spike
+  - id: ci-secret-scan
+    rule: PR 的 base..head 全部提交在 CI 里再扫一遍（gitleaks + 内置规则）
+    enforce: ci
+    check: .github/workflows/ci.yml scripts/scan-range.sh
+    profile: product
+  - id: allowlist-fake-only
+    rule: security-allowlist / .gitleaksignore 只登记明显的假值
+    enforce: advisory
+    note: 评审检查这两个文件的改动
+    profile: spike
+  - id: no-private-analysis-in-public
+    rule: 公开仓库不放公司私有代码的分析
+    enforce: advisory
+    note: 发布前人工确认；私有主机名写进仓库外的 private-patterns.txt
+    profile: spike
+  - id: fail-fast-config
+    rule: 缺身份 / 配置直接报错，不填默认值
+    enforce: advisory
+    note: 评审检查
+    profile: spike
+  - id: cc-commit-title
+    rule: 提交标题符合 Conventional Commits，不是 agent 回复原文
+    enforce: hook
+    check: scripts/git/commit-msg
+    profile: spike
+  - id: rules-in-repo
+    rule: 规则目录与 AGENTS.md 不被 .gitignore 忽略
+    enforce: gate
+    check: scripts/rule-doctor.sh
+    profile: spike
+  - id: no-conflicting-rules
+    rule: AGENTS.md / rules / skills / docs 不要求执行被禁止的命令
+    enforce: gate
+    check: scripts/rule-doctor.sh
+    profile: spike
+  - id: agents-md-budget
+    rule: AGENTS.md 不超过行数预算（默认 80，子目录 30）
+    enforce: gate
+    check: scripts/rule-doctor.sh
+    profile: spike
+  - id: no-silent-advisory
+    rule: CI 门禁不得静默 continue-on-error，豁免需注释写明理由
+    enforce: gate
+    check: scripts/rule-doctor.sh
+    profile: spike
+  - id: stop-after-3-failures
+    rule: 同一切片 3 次门禁失败就停下写交接
+    enforce: advisory
+    note: 任务卡 / plan 的失败规则
+    profile: spike
+  - id: implementer-not-reviewer
+    rule: 实现者不评审、不测试自己的卡
+    enforce: advisory
+    note: 看板流转时检查
+    profile: platform
+  - id: task-card-schema
+    rule: 任务卡符合 .agents/task-card.schema.json，验收引用 acceptance 中存在的 AC
+    enforce: gate
+    check: scripts/rule-doctor.sh scripts/render-task-card.sh .agents/task-card.schema.json
+    profile: platform

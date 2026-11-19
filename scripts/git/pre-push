@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# 推送前：逐个扫描即将推送的 commit（提交信息 + diff + 新增文件名与大小），再跑 gate fast。
+# agent 推送的分支同样经过这里。AEP_PREPUSH_GATE=0 只跳过 gate，安全扫描不能跳过。
+set -euo pipefail
+here=$(cd "$(dirname "$0")/.." && pwd)
+remote=${1:-origin}
+fail=0
+while read -r _ lsha _ rsha; do
+  case "$lsha" in *[!0]*) ;; *) continue ;; esac   # 删除远端分支：没有要推送的内容
+  if [ -n "${rsha//0/}" ] && git cat-file -e "$rsha^{commit}" 2>/dev/null; then
+    range=("$rsha..$lsha")
+  else
+    range=("$lsha" --not --remotes="$remote")      # 新分支，或本地没有远端的旧提交：扫远端还没有的全部提交
+  fi
+  "$here/scan-range.sh" "${range[@]}" || fail=1
+done
+if [ "$fail" != 0 ]; then
+  echo "✗ pre-push：安全扫描未通过，推送已取消。修正后用 git commit --amend / rebase 改写这些提交再推送。" >&2
+  exit 1
+fi
+[ "${AEP_PREPUSH_GATE:-1}" = 0 ] || "$here/gate.sh" fast

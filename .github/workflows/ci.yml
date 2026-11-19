@@ -1,0 +1,109 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  fast:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        if: hashFiles('.nvmrc', '.node-version') != ''
+        with:
+          node-version-file: ${{ hashFiles('.nvmrc') != '' && '.nvmrc' || '.node-version' }}
+      - uses: actions/setup-python@v7
+        if: hashFiles('.python-version') != ''
+        with:
+          python-version-file: .python-version
+      - run: scripts/gate.sh fast
+
+  # PR 的 base..head 逐个提交扫描（信息 + diff + 新增文件名与大小），gitleaks 与内置规则都跑。
+  # gitleaks-action 在组织账号下需要 license，这里直接下载固定版本的二进制并校验 sha256。
+  secret-scan:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: 安装 gitleaks
+        env:
+          GITLEAKS_VERSION: 8.30.1
+          GITLEAKS_SHA256: 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
+        run: |
+          curl -fsSL -o "$RUNNER_TEMP/gitleaks.tgz" \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          echo "$GITLEAKS_SHA256  $RUNNER_TEMP/gitleaks.tgz" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/gitleaks.tgz" -C "$RUNNER_TEMP" gitleaks
+          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
+      - name: 扫描 PR 的全部提交
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          gitleaks version
+          scripts/scan-range.sh "$BASE_SHA..$HEAD_SHA"
+
+  # PR 改了 prompt 时 merge 会跑 eval（scripts/check-prompts.sh）：base 用 GATE_BASE，所以要完整历史；
+  # runner 需要模型密钥时在 gate.sh merge 这一步的 env 里引用 secrets。
+  merge:
+    if: github.event_name == 'pull_request'
+    needs: fast
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v7
+        if: hashFiles('.nvmrc', '.node-version') != ''
+        with:
+          node-version-file: ${{ hashFiles('.nvmrc') != '' && '.nvmrc' || '.node-version' }}
+      - uses: actions/setup-python@v7
+        if: hashFiles('.python-version') != ''
+        with:
+          python-version-file: .python-version
+      - run: scripts/gate.sh merge
+        env:
+          GATE_BASE: ${{ github.event.pull_request.base.sha }}
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: merge-artifacts
+          path: artifacts/
+          if-no-files-found: ignore
+
+  # 分支保护只把 ci-ok 设为 required check（strict）。fast 失败时 merge 会被跳过，而 GitHub 把跳过的 job 当作通过，
+  # 只设 merge 会被绕过。新增必过 job 时加进 needs；push 事件上只在 PR 运行的 job 是 skipped，不算失败。
+  ci-ok:
+    if: always()
+    needs: [fast, secret-scan, merge]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: 必过 job 全部成功
+        env:
+          EVENT: ${{ github.event_name }}
+          NEEDS: ${{ toJSON(needs) }}
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "$NEEDS"
+          for r in $RESULTS; do
+            case "$r" in
+              success) ;;
+              skipped) if [ "$EVENT" = pull_request ]; then echo "::error::有必过 job 被跳过"; exit 1; fi ;;
+              *) echo "::error::有必过 job 的结果是 $r"; exit 1 ;;
+            esac
+          done

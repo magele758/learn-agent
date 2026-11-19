@@ -1,0 +1,12 @@
+---
+description: 提交信息、trailer 与 PR 描述规范。在 commit、写 PR、整理分支时使用。
+alwaysApply: false
+---
+
+# 提交与 PR
+
+- 标题：`type(scope): 用户视角一句话`，type ∈ feat fix docs test refactor perf ci chore build。
+- 标题由你重新撰写，禁止粘贴对话回复（如“完美！”“Verdict:”）或推理过程。
+- 用户可见变更加 `Release-Note: <一句话，面向用户>`；改已批准 AC 加 `Contract-Change: <文件 AC-n + 理由>`；关联卡加 `Task: <id>`。
+- 一个 commit 一个功能点；混杂改动先按功能拆分再提交。
+- PR 描述按 `.github/pull_request_template.md` 填写，验证结果必须是实际运行输出摘要。
