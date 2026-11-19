@@ -1,0 +1,31 @@
+name: 需求 / Feature
+description: 新能力或行为变更（会转为 acceptance YAML）
+labels: [feature]
+body:
+  - type: textarea
+    id: scenario
+    attributes:
+      label: 用户与场景
+      description: 谁，在什么情况下，想做到什么
+    validations:
+      required: true
+  - type: textarea
+    id: criteria
+    attributes:
+      label: 验收草案（Given / When / Then，至少 3 条）
+      placeholder: |
+        AC-1 Given … When … Then …
+        AC-2 Given … When … Then …
+        AC-3 Given …（异常/边界）When … Then …
+    validations:
+      required: true
+  - type: textarea
+    id: non_goals
+    attributes:
+      label: 非目标
+  - type: dropdown
+    id: risk
+    attributes:
+      label: 风险类别（命中任一为高风险，需风险清单与设计评审）
+      multiple: true
+      options: [无, 调度/定时, 并发, 身份/权限, 计费, 数据迁移, 跨进程协议]

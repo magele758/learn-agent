@@ -1,0 +1,11 @@
+---
+description: 发生事故、回滚、误操作，或同一主题第 3 次 fix 时使用：写复盘并把教训回流为规则/门禁/测试。
+alwaysApply: false
+---
+
+# 事故与复盘
+
+1. 先止血（恢复服务 / 回滚），不扩大操作范围；涉及共享实例先问用户。
+2. 用 `docs/retro/_template.md` 写 `docs/retro/<date>-<slug>.md`：时间线 → 根因（追到“规则/门禁/流程缺什么”）→ 回流动作。
+3. 回流动作至少落一项到：`.agents/deny-commands.txt` / AGENTS.md 红线 / 测试 / 模板，并在同一 PR 中完成。
+4. 检查是否有其他规则与新规则冲突，冲突处一并修正。

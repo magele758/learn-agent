@@ -1,0 +1,33 @@
+name: nightly
+
+on:
+  schedule:
+    - cron: "0 18 * * *"   # UTC，按需调整
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  full:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v7
+      # full 含 eval（配置了 eval runner 时）；需要模型密钥就在这一步的 env 里引用 secrets
+      - run: scripts/gate.sh full
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: nightly-artifacts
+          path: artifacts/
+          if-no-files-found: ignore
+      - name: 失败时开 issue
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue create \
+            --title "nightly full gate 失败 $(date -u +%F)" \
+            --body "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"

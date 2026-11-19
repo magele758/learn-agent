@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "hooks": {
+    "beforeShellExecution": [
+      {
+        "command": ".agents/hooks/guard-shell.sh",
+        "timeout": 5
+      }
+    ]
+  }
+}

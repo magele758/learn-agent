@@ -1,0 +1,31 @@
+name: 缺陷 / Bug
+description: 已交付行为与预期不符
+labels: [bug]
+body:
+  - type: textarea
+    id: repro
+    attributes:
+      label: 复现步骤
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 预期 vs 实际
+    validations:
+      required: true
+  - type: input
+    id: ac
+    attributes:
+      label: 违反的验收标准（如有）
+      placeholder: "<id>#AC-n"
+  - type: textarea
+    id: evidence
+    attributes:
+      label: 证据（日志 / 截图 / 版本）
+  - type: checkboxes
+    id: recurring
+    attributes:
+      label: 复发
+      options:
+        - label: 同一主题已修过 ≥ 2 次（修复时需同时写 docs/retro/）

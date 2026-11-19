@@ -1,0 +1,4 @@
+{"id": "exact-text", "input": "退款申请已提交", "expected": "退款申请已提交", "criteria": "exact"}
+{"id": "contains-order", "input": "已为订单 A-1024 创建退款", "expected": ["A-1024", "退款"], "criteria": "contains"}
+{"id": "regex-order", "input": "订单号 A-2048", "expected": "^订单号 A-[0-9]{4}$", "criteria": "regex"}
+{"id": "json-intent", "input": {"intent": "refund", "slots": {"order": "A-1024"}}, "expected": {"slots": {"order": "A-1024"}, "intent": "refund"}, "criteria": {"match": "json", "rubric": "意图与订单号都正确；rubric 留给项目自己的 runner（如 LLM 评分），参考 runner 只看 match"}}

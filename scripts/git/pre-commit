@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# 由 `git config core.hooksPath scripts/git` 启用。只检查暂存内容：敏感文件名、大小上限、冲突标记、密钥与私有信息。
+set -euo pipefail
+exec "$(dirname "$0")/../check-hygiene.sh" --staged

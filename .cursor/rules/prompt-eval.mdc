@@ -1,0 +1,13 @@
+---
+description: prompt / 模型改动必须过 eval：版本标记、基线对比、基线只显式更新
+globs: prompts/**,evals/**,docs/models.md
+alwaysApply: false
+---
+
+# prompt 与 eval
+
+1. prompt 放 `prompts/`（`.agents/paradigm.conf` 的 `prompt_dirs`），每个文件带版本标记：前 10 行写 `version: <N>`，或文件名带 `.v<N>.`。
+2. 改 prompt 先 bump 版本（文件名带版本的复制成新文件再改引用），再跑 `scripts/eval-compare.sh --run`；`scripts/gate.sh merge` 对相对 base 改动的 prompt 强制执行，没配 runner 直接失败。
+3. 换模型 / 服务商 / 快照 / 关键参数：同一个 PR 里更新 `docs/models.md` 的固定表，并在变更记录写一行（eval 对比结果 + 回滚方式）。
+4. 基线只用 `scripts/eval-compare.sh --update-baseline` 显式更新，PR 里写明原因；不为过门禁更新基线、删用例、改 expected 或放宽阈值——等同修改契约断言，先问人。
+5. AI 行为的验收：AC 写 `verify: eval` 和 `eval: {dataset: evals/datasets/<x>.jsonl, min_pass_rate: <0–1>}`，数据集与实现放同一个 PR（约定见 `evals/README.md`）。

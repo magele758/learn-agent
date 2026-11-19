@@ -1,0 +1,10 @@
+# 项目级 skill 登记表（真源）。其他工具目录（.claude/skills 等）用 symlink 指向 .agents/skills。
+# access: read | write | deploy    envs: 允许使用的环境
+# 新增/修改 skill 时同步本表并 bump version。
+
+[[skill]]
+name = "verify-change"
+version = "0.1.0"
+access = "read"
+envs = ["local", "ci"]
+summary = "按任务卡/AC 跑分档门禁并产出验证证据"

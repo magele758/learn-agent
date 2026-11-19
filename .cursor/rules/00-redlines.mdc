@@ -1,0 +1,14 @@
+---
+description: 项目红线摘要（完整版见 AGENTS.md）
+alwaysApply: true
+---
+
+# 红线
+
+开始任何改动前读 `AGENTS.md`。以下任一情况立即停止并询问用户：
+
+- 需要修改用户确认的契约测试断言，或想用 skip / mock / 删断言让测试通过
+- 需要 force push、`--no-verify`、`reset --hard`、`stash` 他人改动（均被禁止，由用户决定）
+- 需要停止 / 重建 / kill 共享运行实例（端口见 `.agents/protected-ports`）
+- 即将写入密钥、会话日志、主机名、IP 或个人绝对路径
+- 发现 AGENTS.md、rules、skills 之间的指令互相矛盾（报告矛盾，不要自行择一执行）
